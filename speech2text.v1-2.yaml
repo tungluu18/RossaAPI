@@ -1,0 +1,423 @@
+openapi: 3.0.0
+info:
+  title: "RossaVoice's Speech2Text API"
+  version: '1.0'
+  contact:
+    name: Rossa Team
+    email: hy@cinnamon.is
+  description: "This document describes API for speech-to-text engine of RossaVoice.\n\n\n\nA flow of speech-to-text is described as follow.\n\n\n- First, uploading the audio file to our server via `POST /api/file`\n- Second, adding a speech-to-text job by `POST /api/job`\n- Third, checking the process by `GET /api/job/{job_id}/status`\n- Fourth, once you receive progess \"transcribed\" from `GET \n/api/job/{job_id}/status`, you can get the result by `GET /api/job/{job_id}`\n- Finally, discard the job by `DELETE /api/job/{job_id}`"
+servers:
+  - url: 'http://localhost:5000'
+paths:
+  '/api/job/{job_id}':
+    parameters:
+      - schema:
+          type: string
+        name: job_id
+        in: path
+        required: true
+    delete:
+      summary: 5. Removing Job
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: number
+                  data:
+                    type: object
+                    required:
+                      - job_id
+                      - status
+                    properties:
+                      job_id:
+                        type: string
+                      filename:
+                        type: string
+                      status:
+                        type: string
+                        enum:
+                          - transcribed
+                          - transcribing
+                required:
+                  - status
+                  - data
+              examples:
+                example-200:
+                  value:
+                    status: 200
+                    data:
+                      job_id: cinnamon_job_1
+                      filename: audio_1.wav
+                      status: transcribed
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: number
+                  error:
+                    type: string
+                required:
+                  - status
+                  - error
+              examples:
+                example-400:
+                  value:
+                    status: 400
+                    error: Not found job_id
+      description: |-
+        This API aims to remove:
+        - finished job
+        - running job
+      operationId: delete-job-job_id
+    get:
+      summary: 4. Getting job
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: number
+                  error:
+                    type: string
+                  data:
+                    type: object
+                    required:
+                      - job_id
+                      - speaker_diarization
+                      - punctuation
+                      - filler_tagging
+                      - number_conversion
+                      - filename
+                      - status
+                    properties:
+                      job_id:
+                        type: string
+                      speaker_diarization:
+                        type: boolean
+                      punctuation:
+                        type: boolean
+                      filler_tagging:
+                        type: boolean
+                      number_conversion:
+                        type: boolean
+                      filename:
+                        type: string
+                      status:
+                        type: string
+                        enum:
+                          - transcribed
+                          - transcribing
+                      result:
+                        type: array
+                        description: Only available when status is `transcribed`
+                        items:
+                          type: object
+                          properties:
+                            start:
+                              type: number
+                              description: The start time of this transcript.
+                            end:
+                              type: number
+                              description: The end time of this transcript.
+                            speaker_number:
+                              type: number
+                              description: 'Speaker number talking from "start" to "end".'
+                            transcript:
+                              type: string
+                              description: 'Transcript of "speaker_number" talking from "start" to "end".'
+                          required:
+                            - start
+                            - end
+                            - speaker_number
+                            - transcript
+                required:
+                  - status
+                  - error
+                  - data
+              examples:
+                example-200:
+                  value:
+                    status: 200
+                    error: null
+                    data:
+                      job_id: cinnamon_job_1
+                      filename: audio_1.wav
+                      speaker_diarization: true
+                      punctuation: true
+                      filler_tagging: true
+                      number_conversion: true
+                      status: transcribed
+                      result:
+                        - speaker_number: 1
+                          start: 1.1
+                          end: 5.75
+                          transcript: シナモンコンタクトセンターにご来訪いただき、ありがとうございます、(F あーの)、マウスのトラブルに関するサービスを提供しておりまして、何かサポートさせて頂けますか
+                        - speaker_number: 2
+                          start: 5.85
+                          end: 6.01
+                          transcript: はい
+                example-200-2:
+                  value:
+                    status: 200
+                    error: null
+                    data:
+                      job_id: cinnamon_job_1
+                      filename: audio_1.wav
+                      speaker_diarization: true
+                      punctuation: true
+                      filler_tagging: false
+                      number_conversion: true
+                      status: transcribed
+                      result:
+                        - speaker_number: 1
+                          start: 1.1
+                          end: 5.75
+                          transcript: シナモンコンタクトセンターにご来訪いただき、ありがとうございます、あーの、マウスのトラブルに関するサービスを提供しておりまして、何かサポートさせて頂けますか
+                        - speaker_number: 2
+                          start: 5.85
+                          end: 6.01
+                          transcript: はい
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: number
+                  error:
+                    type: string
+                required:
+                  - status
+                  - error
+              examples:
+                example-400-2:
+                  value:
+                    status: 400
+                    error: File not found
+      requestBody: {}
+      operationId: get-job-job_id
+      description: This API aims to add a speech to text job with the uploaded file (done in `POST /api/file`).
+    operationId: get-removejob
+  '/api/job/{job_id}/status':
+    get:
+      summary: 3. Getting job status
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: number
+                  error:
+                    type:
+                      - string
+                      - 'null'
+                  data:
+                    type: object
+                    properties:
+                      job_id:
+                        type: string
+                      status:
+                        type: string
+                        enum:
+                          - transcribed
+                          - transcribing
+                    required:
+                      - job_id
+                      - status
+                required:
+                  - status
+              examples:
+                example-200-1:
+                  value:
+                    status: 200
+                    error: null
+                    data:
+                      job_id: cinnamon_job_1
+                      status: transcribing
+                example-200-2:
+                  value:
+                    status: 200
+                    error: null
+                    data:
+                      job_id: cinnamon_job_1
+                      status: transcribed
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: number
+                  error:
+                    type: string
+                required:
+                  - status
+                  - error
+              examples:
+                example-400:
+                  value:
+                    status: 400
+                    error: Not found job_id.
+      operationId: get-job-job_id-status
+      description: This API aims to check the job status of added job (`POST /api/job`).
+      requestBody: {}
+    parameters:
+      - schema:
+          type: string
+        name: job_id
+        in: path
+        required: true
+  /api/job:
+    parameters: []
+    post:
+      summary: 2. Adding Speech2Text Job
+      operationId: post-job
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                  error:
+                    type:
+                      - string
+                      - 'null'
+                  result:
+                    type: object
+                    properties:
+                      job_id:
+                        type: string
+                      filename:
+                        type: string
+              examples:
+                example-1: {}
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filename:
+                  type: string
+                  description: The name of file that you use `POST /api/job` to upload. We recommend to use file name with haftwidth chatacters.
+                speaker_diarization:
+                  type: boolean
+                  description: 'Speaker diarization mode which indicates "who spoke what"'
+                punctuation:
+                  type: boolean
+                  description: Punctuation adding
+                filler_tagging:
+                  type: boolean
+                  description: Displaying filler mark
+                number_conversion:
+                  type: boolean
+                  description: Converting kanji number into romanji number
+              required:
+                - filename
+                - speaker_diarization
+                - punctuation
+                - filler_tagging
+                - number_conversion
+        description: ''
+      description: This API aims to add a speech to text job with the uploaded file (done in `POST /file`).
+  /api/file:
+    post:
+      summary: 1. Uploading audio file
+      operationId: post-file
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: number
+                  error:
+                    type:
+                      - string
+                      - 'null'
+                  data:
+                    type: object
+                    required:
+                      - filename
+                    properties:
+                      filename:
+                        type: string
+                        description: audio file name
+                required:
+                  - status
+                  - data
+              examples:
+                example-200:
+                  value:
+                    status: 200
+                    error: null
+                    data:
+                      filename: audio_1.wav
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: number
+                  error:
+                    type: string
+                required:
+                  - status
+                  - error
+              examples:
+                example-400:
+                  value:
+                    status: 400
+                    error: 'Invalid audio file, It should be *.mp3 *.wav'
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: object
+              required:
+                - file
+            examples: {}
+        description: "This is form-data body. \nIt only has one key namely \"file\" and the value is the audio file attachment."
+      description: |-
+        This API aims to upload the file into the server.
+        It supports for `POST /api/job` API that we can call with the file name only.
+      parameters: []
+    parameters: []
+components:
+  schemas: {}

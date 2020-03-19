@@ -19,60 +19,40 @@ paths:
     delete:
       summary: 5. Removing Job
       responses:
-        '200':
-          description: OK
+        '204':
+          description: |-
+            No Content
+            Successfully delete job.
+        '404':
+          description: Not Found
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  status:
-                    type: number
-                  data:
+                  _state:
+                    type: string
+                    default: ERR
+                  _error:
                     type: object
                     required:
-                      - job_id
-                      - status
+                      - code
+                      - message
                     properties:
-                      job_id:
+                      code:
+                        type: integer
+                      message:
                         type: string
-                      filename:
-                        type: string
-                      status:
-                        type: string
-                        enum:
-                          - transcribed
-                          - transcribing
                 required:
-                  - status
-                  - data
-              examples:
-                example-200:
-                  value:
-                    status: 200
-                    data:
-                      job_id: cinnamon_job_1
-                      filename: audio_1.wav
-                      status: transcribed
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: number
-                  error:
-                    type: string
-                required:
-                  - status
-                  - error
+                  - _state
+                  - _error
               examples:
                 example-400:
                   value:
-                    status: 400
-                    error: Not found job_id
+                    _state: ERR
+                    _error:
+                      code: 404
+                      message: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
       description: |-
         This API aims to remove:
         - finished job
@@ -207,63 +187,58 @@ paths:
               schema:
                 type: object
                 properties:
+                  _id:
+                    type: string
+                  _updated:
+                    type: string
+                    format: date-time
+                  _created:
+                    type: string
+                    format: date-time
                   status:
-                    type: number
-                  error:
-                    type:
-                      - string
-                      - 'null'
-                  data:
-                    type: object
-                    properties:
-                      job_id:
-                        type: string
-                      status:
-                        type: string
-                        enum:
-                          - transcribed
-                          - transcribing
-                    required:
-                      - job_id
-                      - status
+                    type: string
                 required:
+                  - _id
+                  - _updated
+                  - _created
                   - status
               examples:
-                example-200-1:
+                example-200:
                   value:
-                    status: 200
-                    error: null
-                    data:
-                      job_id: cinnamon_job_1
-                      status: transcribing
-                example-200-2:
-                  value:
-                    status: 200
-                    error: null
-                    data:
-                      job_id: cinnamon_job_1
-                      status: transcribed
-        '201':
-          description: Created
-        '400':
-          description: Bad Request
+                    _id: 5e735d3671870305ecf65ffd
+                    _updated: 'Thu, 19 Mar 2020 11:53:26 GMT'
+                    _created: 'Thu, 19 Mar 2020 11:53:26 GMT'
+                    status: success
+        '404':
+          description: Not Found
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  status:
-                    type: number
-                  error:
+                  _error:
+                    type: object
+                    required:
+                      - code
+                      - message
+                    properties:
+                      code:
+                        type: integer
+                      message:
+                        type: string
+                  _state:
                     type: string
+                    default: ERR
                 required:
-                  - status
-                  - error
+                  - _state
+                  - _error
               examples:
                 example-400:
                   value:
-                    status: 400
-                    error: Not found job_id.
+                    _error:
+                      code: 404
+                      message: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+                    _state: ERR
       operationId: get-job-job_id-status
       description: This API aims to check the job status of added job (`POST /api/job`).
       requestBody: {}
@@ -279,37 +254,119 @@ paths:
       summary: 2. Adding Speech2Text Job
       operationId: post-job
       responses:
-        '200':
-          description: OK
+        '201':
+          description: Created
           content:
             application/json:
               schema:
                 type: object
                 properties:
+                  _updated:
+                    type: string
+                    format: date-time
+                  _created:
+                    type: string
+                    format: date-time
+                  _id:
+                    type: string
+                  _state:
+                    type: string
+                    default: OK
+                  file_id:
+                    type: string
+                  speaker_diarization:
+                    type: boolean
+                  punctuation:
+                    type: boolean
+                  filler_tagging:
+                    type: boolean
+                  number_conversion:
+                    type: boolean
                   status:
-                    type: integer
-                  error:
-                    type:
-                      - string
-                      - 'null'
-                  result:
+                    type: string
+                    default: transcribing
+                    enum:
+                      - transcribing
+                      - success
+                  file_name:
+                    type: string
+                required:
+                  - _updated
+                  - _created
+                  - _id
+                  - _state
+                  - file_id
+                  - speaker_diarization
+                  - punctuation
+                  - filler_tagging
+                  - number_conversion
+                  - status
+              examples:
+                example:
+                  value:
+                    _updated: 'Thu, 19 Mar 2020 11:53:26 GMT'
+                    _created: 'Thu, 19 Mar 2020 11:53:26 GMT'
+                    _id: 5e735d3671870305ecf65ffd
+                    _state: OK
+                    file_id: 5e735d2e71870305ecf65ffc
+                    speaker_diarization: false
+                    number_conversion: true
+                    punctuation: true
+                    filler_tagging: false
+                    status: transcribing
+                    file_name: 5e735d2e71870305ecf65ffa_chiba0132-C.wav
+        '422':
+          description: |
+            Unprocessable Entity (WebDAV)
+
+            In such case:
+              - `file_id` is invalid because uploaded file with `file_id` is unavailable on server.
+              - any field is in wrong type.
+              - lack of required field(s).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _error:
+                    type: object
+                    required:
+                      - code
+                      - message
+                    properties:
+                      code:
+                        type: integer
+                      message:
+                        type: string
+                  _issues:
                     type: object
                     properties:
-                      job_id:
+                      _exception:
                         type: string
-                      filename:
-                        type: string
+                  _state:
+                    type: string
+                    default: ERR
+                required:
+                  - _state
+                  - _error
               examples:
-                example-1: {}
+                example:
+                  value:
+                    _state: ERR
+                    _issues:
+                      speaker_diarization: required field
+                    _error:
+                      code: 422
+                      message: 'Insertion failure: 1 document(s) contain(s) error(s)'
       requestBody:
         content:
           application/json:
             schema:
               type: object
               properties:
-                filename:
+                file_id:
                   type: string
-                  description: The name of file that you use `POST /api/job` to upload. We recommend to use file name with haftwidth chatacters.
+                  description: '`_id` of uploaded file which was returned when using `POST /api/file`. '
                 speaker_diarization:
                   type: boolean
                   description: 'Speaker diarization mode which indicates "who spoke what"'
@@ -323,7 +380,7 @@ paths:
                   type: boolean
                   description: Converting kanji number into romanji number
               required:
-                - filename
+                - file_id
                 - speaker_diarization
                 - punctuation
                 - filler_tagging
@@ -335,56 +392,76 @@ paths:
       summary: 1. Uploading audio file
       operationId: post-file
       responses:
-        '200':
-          description: OK
+        '201':
+          description: Created
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  status:
-                    type: number
-                  error:
-                    type:
-                      - string
-                      - 'null'
-                  data:
+                  _updated:
+                    type: string
+                    format: date-time
+                  _created:
+                    type: string
+                    format: date-time
+                  _id:
+                    type: string
+                    description: id of uploaded file on server
+                  _state:
+                    type: string
+                    default: OK
+                required:
+                  - _updated
+                  - _created
+                  - _id
+                  - _state
+              examples:
+                example-201:
+                  value:
+                    _updated: 'Thu, 19 Mar 2020 11:53:18 GMT'
+                    _created: 'Thu, 19 Mar 2020 11:53:18 GMT'
+                    _id: 5e735d2e71870305ecf65ffc
+                    _state: OK
+        '422':
+          description: |-
+            Unprocessable Entity
+            Uploaded file is not in expected format/MIME type  .
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _state:
+                    type: string
+                    default: ERR
+                  _issues:
+                    type: object
+                    properties:
+                      _exception:
+                        type: string
+                  _error:
                     type: object
                     required:
-                      - filename
+                      - code
+                      - message
                     properties:
-                      filename:
+                      code:
+                        type: integer
+                      message:
                         type: string
-                        description: audio file name
                 required:
-                  - status
-                  - data
+                  - _state
+                  - _error
               examples:
-                example-200:
+                example-422:
                   value:
-                    status: 200
-                    error: null
-                    data:
-                      filename: audio_1.wav
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: number
-                  error:
-                    type: string
-                required:
-                  - status
-                  - error
-              examples:
-                example-400:
-                  value:
-                    status: 400
-                    error: 'Invalid audio file, It should be *.mp3 *.wav'
+                    _state: ERR
+                    _issues:
+                      exception: Unsupported MIME type text/plain
+                    _error:
+                      code: 422
+                      message: 'Insertion failure: 1 document(s) contain(s) error(s)'
       requestBody:
         content:
           multipart/form-data:

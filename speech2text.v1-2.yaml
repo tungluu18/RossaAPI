@@ -89,65 +89,58 @@ paths:
               schema:
                 type: object
                 properties:
-                  status:
-                    type: number
-                  error:
+                  _id:
                     type: string
-                  data:
-                    type: object
-                    required:
-                      - job_id
-                      - speaker_diarization
-                      - punctuation
-                      - filler_tagging
-                      - number_conversion
-                      - filename
-                      - status
-                    properties:
-                      job_id:
-                        type: string
-                      speaker_diarization:
-                        type: boolean
-                      punctuation:
-                        type: boolean
-                      filler_tagging:
-                        type: boolean
-                      number_conversion:
-                        type: boolean
-                      filename:
-                        type: string
-                      status:
-                        type: string
-                        enum:
-                          - transcribed
-                          - transcribing
-                      result:
-                        type: array
-                        description: Only available when status is `transcribed`
-                        items:
-                          type: object
-                          properties:
-                            start:
-                              type: number
-                              description: The start time of this transcript.
-                            end:
-                              type: number
-                              description: The end time of this transcript.
-                            speaker_number:
-                              type: number
-                              description: 'Speaker number talking from "start" to "end".'
-                            transcript:
-                              type: string
-                              description: 'Transcript of "speaker_number" talking from "start" to "end".'
-                          required:
-                            - start
-                            - end
-                            - speaker_number
-                            - transcript
+                  number_conversion:
+                    type: boolean
+                  filler_tagging:
+                    type: boolean
+                  punctuation:
+                    type: boolean
+                  speaker_diarization:
+                    type: boolean
+                  _updated:
+                    type: string
+                  _created:
+                    type: string
+                  status:
+                    type: string
+                    enum:
+                      - transcribed
+                      - transcribing
+                  result:
+                    type: array
+                    description: Only available when status is `transcribed`
+                    items:
+                      type: object
+                      properties:
+                        start:
+                          type: number
+                          description: The start time of this transcript.
+                        end:
+                          type: number
+                          description: The end time of this transcript.
+                        speaker_number:
+                          type: number
+                          description: 'Speaker number talking from "start" to "end".'
+                        transcript:
+                          type: string
+                          description: 'Transcript of "speaker_number" talking from "start" to "end".'
+                      required:
+                        - start
+                        - end
+                        - speaker_number
+                        - transcript
                 required:
+                  - _id
+                  - number_conversion
+                  - filler_tagging
+                  - punctuation
+                  - speaker_diarization
                   - status
-                  - error
-                  - data
+                  - result
+                  - _updated
+                  - _created
               examples:
                 example-200:
                   value:
@@ -262,6 +255,8 @@ paths:
                     data:
                       job_id: cinnamon_job_1
                       status: transcribed
+        '201':
+          description: Created
         '400':
           description: Bad Request
           content:

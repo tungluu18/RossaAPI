@@ -5,11 +5,11 @@ info:
   contact:
     name: Rossa Team
     email: hy@cinnamon.is
-  description: "This document describes API for speech-to-text engine of RossaVoice.\n\n\n\nA flow of speech-to-text is described as follow.\n\n\n- First, uploading the audio file to our server via `POST /api/file`\n- Second, adding a speech-to-text job by `POST /api/job`\n- Third, checking the process by `GET /api/job/{job_id}/status`\n- Fourth, once you receive progess \"transcribed\" from `GET \n/api/job/{job_id}/status`, you can get the result by `GET /api/job/{job_id}`\n- Finally, discard the job by `DELETE /api/job/{job_id}`"
+  description: "This document describes API for speech-to-text engine of RossaVoice.\n\n\n\nA flow of speech-to-text is described as follow.\n\n\n- First, uploading the audio file to our server via `POST /api/files`\n- Second, adding a speech-to-text job by `POST /api/jobs`\n- Third, checking the process by `GET /api/jobs/{job_id}/status`\n- Fourth, once you receive progess \"transcribed\" from `GET \n/api/jobs/{job_id}/status`, you can get the result by `GET /api/jobs/{job_id}`\n- Finally, discard the job by `DELETE /api/jobs/{job_id}`"
 servers:
   - url: 'http://localhost:5000'
 paths:
-  '/api/job/{job_id}':
+  '/api/jobs/{job_id}':
     parameters:
       - schema:
           type: string
@@ -175,7 +175,7 @@ paths:
       operationId: get-job-job_id
       description: Get the result of a transcribed speech2text job.
     operationId: get-removejob
-  '/api/job/{job_id}/status':
+  '/api/jobs/{job_id}/status':
     get:
       summary: 3. Getting job status
       tags: []
@@ -240,7 +240,7 @@ paths:
                       message: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
                     _state: ERR
       operationId: get-job-job_id-status
-      description: This API aims to check the job status of added job (`POST /api/job`).
+      description: This API aims to check the job status of added job (`POST /api/jobs`).
       requestBody: {}
     parameters:
       - schema:
@@ -248,7 +248,7 @@ paths:
         name: job_id
         in: path
         required: true
-  /api/job:
+  /api/jobs:
     parameters: []
     post:
       summary: 2. Adding Speech2Text Job
@@ -386,8 +386,8 @@ paths:
                 - filler_tagging
                 - number_conversion
         description: ''
-      description: This API aims to add a speech to text job with the uploaded file (done in `POST /file`).
-  /api/file:
+      description: This API aims to add a speech to text job with the uploaded file (done in `POST /api/files`).
+  /api/files:
     post:
       summary: 1. Uploading audio file
       operationId: post-file
@@ -476,7 +476,7 @@ paths:
         description: "This is form-data body. \nIt only has one key namely \"file\" and the value is the audio file attachment."
       description: |-
         This API aims to upload the file into the server.
-        It supports for `POST /api/job` API that we can call with the file name only.
+        It supports for `POST /api/jobs` API that we can call with the file id.
       parameters: []
     parameters: []
 components:

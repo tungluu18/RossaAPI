@@ -657,7 +657,7 @@ paths:
         in: path
         required: true
     get:
-      summary: Your GET endpoint
+      summary: "Get account's info"
       tags: []
       responses:
         '200':
@@ -711,7 +711,7 @@ paths:
           required: true
       requestBody: {}
     patch:
-      summary: ''
+      summary: Update account
       operationId: patch-api-accounts-account_id
       responses:
         '200':
@@ -758,9 +758,9 @@ paths:
                     _issues:
                       password: min length is 6
                     _state: ERR
-      description: "Admin and superuser update accounts.\n\nPermissions:\n\n  `admin` => `admin` | `superuser` | `user`\n  \n  `superuser` => `superuser` (owner only) | `user`"
+      description: "Admin and superuser update accounts: password, username, expiration.\n\nPermissions:\n\n  `admin` => `admin` | `superuser` | `user`\n  \n  `superuser` => `superuser` (owner only) | `user`"
     delete:
-      summary: ''
+      summary: Delete account
       operationId: delete-api-accounts-account_id
       responses:
         '204':

@@ -5,9 +5,12 @@ info:
   contact:
     name: Rossa Team
     email: hy@cinnamon.is
-  description: "This document describes API for speech-to-text engine of RossaVoice.\n\n\n\nA flow of speech-to-text is described as follow.\n\n\n- First, uploading the audio file to our server via `POST /api/files`\n- Second, adding a speech-to-text job by `POST /api/jobs`\n- Third, checking the process by `GET /api/jobs/{job_id}/status`\n- Fourth, once you receive progess \"transcribed\" from `GET \n/api/jobs/{job_id}/status`, you can get the result by `GET /api/jobs/{job_id}`\n- Finally, discard the job by `DELETE /api/jobs/{job_id}`"
+  description: "This document describes API for speech-to-text engine of RossaVoice.\n\n\n\nA flow of speech-to-text is described as follow.\n\n\n- First, uploading the audio file to our server via `POST /api/files`\n- Second, adding a speech-to-text job by `POST /api/jobs`\n- Third, checking the process by `GET /api/jobs/{job_id}/status`\n- Fourth, once you receive progess \"transcribed\" from `GET \n/api/jobs/{job_id}/status`, you can get the result by `GET /api/jobs/{job_id}`\n- Finally, discard the job by `DELETE /api/jobs/{job_id}`\n\nNOTE: Account management would be provided on an `account-service`."
 servers:
   - url: 'http://localhost:5000'
+    description: rossa-service
+  - url: 'http://localhost:5001'
+    description: account-service
 paths:
   '/api/jobs/{job_id}':
     parameters:
@@ -479,5 +482,289 @@ paths:
         It supports for `POST /api/jobs` API that we can call with the file id.
       parameters: []
     parameters: []
+  /api/accounts:
+    get:
+      summary: List accounts
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        _id:
+                          type: string
+                        username:
+                          type: string
+                        role:
+                          type: string
+                        expired_at:
+                          type: string
+                          description: admin and superuser accounts will not be expired
+                        _created:
+                          type: string
+                        _updated:
+                          type: string
+                      required:
+                        - _id
+                        - username
+                        - role
+                  _meta:
+                    type: object
+                    properties:
+                      page:
+                        type: number
+                      max_results:
+                        type: number
+                      total:
+                        type: number
+              examples:
+                example-1:
+                  value:
+                    _items:
+                      - _id: 5ea6a80afdcd174b1aec897f
+                        username: ranma
+                        role: admin
+                        expired_at: 'Tue, 01 Jan 2030 00:00:00 GMT'
+                        _created: 'Thu, 01 Jan 1970 00:00:00 GMT'
+                        _updated: 'Thu, 01 Jan 1970 00:00:00 GMT'
+                    _meta:
+                      page: 1
+                      max_results: 1
+                      total: 2
+      operationId: get-api-accounts
+      description: 'Return all existing accounts can access rossa-service. '
+      parameters:
+        - schema:
+            type: string
+          in: header
+          name: Authorization
+          required: true
+          description: Basic-Auth
+        - schema:
+            type: number
+          in: query
+          name: page
+          description: 'pagination: page index (from 1)'
+        - schema:
+            type: number
+          in: query
+          name: max_results
+          description: 'pagination: number of items'
+      requestBody: {}
+    post:
+      summary: Create account
+      operationId: post-api-accounts
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _created:
+                    type: string
+                  _updated:
+                    type: string
+                  _id:
+                    type: string
+                  _state:
+                    type: string
+                    default: OK
+                required:
+                  - _created
+                  - _updated
+                  - _id
+                  - _state
+        '422':
+          description: |
+            Unprocessable Entity.
+
+            Message error can be found in `_issues` or `_error` (use `_error` when `_issues` is `null`)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _state:
+                    type: string
+                  _issues:
+                    type: object
+                    properties:
+                      '':
+                        type: string
+                  _error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: number
+              examples:
+                example-1:
+                  value:
+                    _state: ERR
+                    _issues:
+                      username: "value 'user12' is not unique"
+                example-2:
+                  value:
+                    _state: ERR
+                    _error:
+                      code: 422
+                      message: Cannot set expiration time for admin/superuser accounts.
+      description: "Admin and superuser create new accounts.\n\nPermissions:\n\n  `admin` => `admin` | `superuser` | `user`\n  \n  `superuser` => `superuser` | `user`"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  pattern: '[a-zA-Z0-9]'
+                password:
+                  type: string
+                  description: ''
+                  format: password
+                  minLength: 6
+                days_to_expiration:
+                  type: number
+                  minimum: 0
+                  description: only available for user account
+                role:
+                  type: string
+                  enum:
+                    - admin
+                    - superuser
+                    - user
+              required:
+                - username
+                - password
+                - role
+  '/api/accounts/{account_id}':
+    parameters:
+      - schema:
+          type: string
+        name: account_id
+        in: path
+        required: true
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _id:
+                    type: string
+                  username:
+                    type: string
+                  role:
+                    type: string
+                  expired_at:
+                    type: string
+                    description: admin and superuser accounts will not be expired
+                  _created:
+                    type: string
+                    format: date-time
+                  _updated:
+                    type: string
+                    format: date-time
+                required:
+                  - _id
+                  - username
+                  - role
+                  - _created
+                  - _updated
+              examples:
+                example-1:
+                  value:
+                    _id: 5ea6a80afdcd174b1aec897f
+                    username: ranma
+                    role: admin
+                    expired_at: 'Tue, 01 Jan 2030 00:00:00 GMT'
+                    _created: 'Thu, 01 Jan 1970 00:00:00 GMT'
+                    _updated: 'Thu, 01 Jan 1970 00:00:00 GMT'
+      operationId: get-api-accounts-account_id
+      description: |-
+        Return account by `_id`.
+
+        NOTE: can access account by using `username` instead of `_id`.
+      parameters:
+        - schema:
+            type: string
+          in: header
+          name: Authorization
+          description: Basic-Auth
+          required: true
+      requestBody: {}
+    patch:
+      summary: ''
+      operationId: patch-api-accounts-account_id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _id:
+                    type: string
+                  _created:
+                    type: string
+                    format: date-time
+                  _updated:
+                    type: string
+                    format: date-time
+                  _state:
+                    type: string
+                    default: OK
+              examples:
+                example-1:
+                  value:
+                    _id: 5ea6bcc186d481e99a5779e2
+                    _updated: 'Mon, 27 Apr 2020 16:36:36 GMT'
+                    _created: 'Mon, 27 Apr 2020 11:06:41 GMT'
+                    _state: OK
+        '422':
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+              examples:
+                example-1:
+                  value:
+                    _state: ERR
+                    _error:
+                      code: 422
+                      message: Cannot set expiration time for admin/superuser accounts.
+                example-2:
+                  value:
+                    _issues:
+                      password: min length is 6
+                    _state: ERR
+      description: "Admin and superuser update accounts.\n\nPermissions:\n\n  `admin` => `admin` | `superuser` | `user`\n  \n  `superuser` => `superuser` (owner only) | `user`"
+    delete:
+      summary: ''
+      operationId: delete-api-accounts-account_id
+      responses:
+        '204':
+          description: No Content
+      description: "Admin and superuser delete accounts.\n\nPermissions:\n\n  `admin` => `admin` | `superuser` | `user`\n  \n  `superuser` => `superuser` (owner only) | `user`"
 components:
   schemas: {}
